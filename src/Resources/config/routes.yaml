@@ -1,0 +1,3 @@
+ecourty_sitemap_controller:
+    resource: ../../Controller/
+    type: attribute

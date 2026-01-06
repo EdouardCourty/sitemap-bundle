@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    name: Tests (PHP ${{ matrix.php }}, Symfony ${{ matrix.symfony }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+        symfony: ['6.4.*', '7.0.*', '7.1.*']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xmlwriter
+          coverage: none
+      
+      - name: Install dependencies
+        run: |
+          composer require --no-update symfony/config:${{ matrix.symfony }}
+          composer require --no-update symfony/dependency-injection:${{ matrix.symfony }}
+          composer require --no-update symfony/http-kernel:${{ matrix.symfony }}
+          composer require --no-update symfony/console:${{ matrix.symfony }}
+          composer require --no-update symfony/routing:${{ matrix.symfony }}
+          composer require --no-update symfony/property-access:${{ matrix.symfony }}
+          composer update --prefer-dist --no-progress
+      
+      - name: Run tests
+        run: composer test
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: xmlwriter
+          coverage: none
+      
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+      
+      - name: Run PHPStan
+        run: composer phpstan
+
+  code-style:
+    name: Code Style
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+      
+      - name: Check code style
+        run: composer cs-check

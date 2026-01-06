@@ -1,0 +1,35 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Ecourty\SitemapBundle\Service\XmlWriter: ~
+
+    Ecourty\SitemapBundle\Service\SitemapIndexWriter:
+        arguments:
+            $xmlWriter: '@Ecourty\SitemapBundle\Service\XmlWriter'
+            $baseUrl: '%ecourty_sitemap.base_url%'
+
+    Ecourty\SitemapBundle\Service\UrlProviderRegistry:
+        arguments:
+            $providers: !tagged_iterator ecourty_sitemap.url_provider
+
+    Ecourty\SitemapBundle\Service\SitemapGenerator:
+        arguments:
+            $registry: '@Ecourty\SitemapBundle\Service\UrlProviderRegistry'
+            $xmlWriter: '@Ecourty\SitemapBundle\Service\XmlWriter'
+            $indexWriter: '@Ecourty\SitemapBundle\Service\SitemapIndexWriter'
+            $useIndex: '%ecourty_sitemap.use_index%'
+            $indexThreshold: '%ecourty_sitemap.index_threshold%'
+
+    Ecourty\SitemapBundle\Contract\SitemapGeneratorInterface:
+        alias: Ecourty\SitemapBundle\Service\SitemapGenerator
+
+    Ecourty\SitemapBundle\Controller\:
+        resource: '../../Controller'
+        tags: ['controller.service_arguments']
+
+    Ecourty\SitemapBundle\Command\DumpSitemapCommand:
+        arguments:
+            $publicDir: '%kernel.project_dir%/public'
+

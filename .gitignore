@@ -1,0 +1,22 @@
+# Dependencies
+/vendor/
+/composer.lock
+
+# Build artifacts
+/.phpunit.cache/
+/var/
+
+# IDE
+/.idea/
+/.vscode/
+
+# OS
+.DS_Store
+
+# PHP CS Fixer
+/.php-cs-fixer.cache
+
+# PHPUnit
+/phpunit.xml
+/.phpunit.result.cache
+/.phpunit.cache

@@ -1,0 +1,34 @@
+sitemap:
+    resource: '@SitemapBundle/Resources/config/routes.yaml'
+
+home:
+    path: /
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::home
+
+about:
+    path: /about
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::about
+
+contact:
+    path: /contact
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::contact
+
+news:
+    path: /news
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::news
+
+song_show:
+    path: /song/{uid}
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::song
+
+article_show:
+    path: /article/{slug}
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::article
+
+product_show:
+    path: /product/{slug}
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::product
+
+page_show:
+    path: /page/{slug}
+    controller: Ecourty\SitemapBundle\Tests\App\Controller\TestController::page

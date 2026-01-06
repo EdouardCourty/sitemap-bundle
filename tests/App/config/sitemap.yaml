@@ -1,0 +1,48 @@
+sitemap:
+    base_url: 'https://example.com'
+    use_index: auto
+    index_threshold: 50
+    
+    static_routes:
+        - route: 'home'
+          priority: 1.0
+          changefreq: 'daily'
+        - route: 'about'
+          priority: 0.8
+          changefreq: 'monthly'
+        - route: 'contact'
+          priority: 0.5
+          changefreq: 'yearly'
+        - route: 'news'
+          priority: 0.9
+          changefreq: 'daily'
+          lastmod: '-1 week'
+    
+    entity_routes:
+        - entity: 'Ecourty\SitemapBundle\Tests\Fixtures\Entity\Song'
+          route: 'song_show'
+          route_params:
+              uid: 'uid'
+          priority: 0.9
+          changefreq: 'weekly'
+          lastmod_property: 'updatedAt'
+          query_builder_method: 'getSitemapQueryBuilder'
+        - entity: 'Ecourty\SitemapBundle\Tests\Fixtures\Entity\Article'
+          route: 'article_show'
+          route_params:
+              slug: 'slug'
+          priority: 0.7
+          changefreq: 'monthly'
+          lastmod_property: 'publishedAt'
+        - entity: 'Ecourty\SitemapBundle\Tests\Fixtures\Entity\Product'
+          route: 'product_show'
+          route_params:
+              slug: 'slug'
+          priority: 0.6
+          changefreq: 'weekly'
+          lastmod_property: 'createdAt'
+          conditions: 'e.published = true'
+        - entity: 'Ecourty\SitemapBundle\Tests\Fixtures\Entity\Page'
+          route: 'page_show'
+          route_params:
+              slug: 'slug'
