@@ -135,7 +135,8 @@ class EntityRouteUrlProvider implements UrlProviderInterface
         }
         $alias = $rootAliases[0];
 
-        $countQb->select(\sprintf('COUNT(%s.id)', $alias));
+        $countQb->select(\sprintf('COUNT(%s.id)', $alias))
+            ->resetDQLPart('orderBy');
 
         return (int) $countQb->getQuery()->getSingleScalarResult();
     }

@@ -19,11 +19,11 @@ class DumpSitemapCommandTest extends DatabaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $command = self::getContainer()->get(DumpSitemapCommand::class);
         \assert($command instanceof DumpSitemapCommand);
         $this->command = $command;
-        
+
         $this->tempDir = \sys_get_temp_dir() . '/sitemap-test-' . \uniqid();
         \mkdir($this->tempDir, 0755, true);
     }
@@ -33,7 +33,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         if (\is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
-        
+
         parent::tearDown();
     }
 
@@ -64,7 +64,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         // Assert: Sitemap content is valid
         $content = \file_get_contents($sitemapFile);
         $this->assertNotFalse($content);
-        
+
         $this->assertStringContainsString('<?xml version="1.0" encoding="UTF-8"?>', $content);
         $this->assertStringContainsString('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', $content);
         $this->assertStringContainsString('<loc>https://example.com/</loc>', $content);
@@ -83,7 +83,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
                 new \DateTimeImmutable(),
             );
             $this->entityManager->persist($article);
-            
+
             if ($i % 20 === 0) {
                 $this->entityManager->flush();
                 $this->entityManager->clear();
@@ -111,7 +111,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         // Assert: Index content references sub-sitemaps
         $indexContent = \file_get_contents($indexFile);
         $this->assertNotFalse($indexContent);
-        
+
         $this->assertStringContainsString('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', $indexContent);
         $this->assertStringContainsString('<loc>https://example.com/sitemap_static.xml</loc>', $indexContent);
         $this->assertStringContainsString('<loc>https://example.com/sitemap_entity_article.xml</loc>', $indexContent);
@@ -123,7 +123,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         $sitemapFile = $this->tempDir . '/sitemap.xml';
         \file_put_contents($sitemapFile, 'old content');
         $originalMtime = \filemtime($sitemapFile);
-        
+
         \sleep(1); // Ensure mtime will be different
 
         // Act: Execute command without force (should fail)
@@ -133,7 +133,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         // Assert: Command failed
         $this->assertSame(Command::FAILURE, $exitCode);
         $this->assertStringContainsString('already exists', $tester->getDisplay());
-        
+
         // Assert: File was not modified
         $this->assertSame($originalMtime, \filemtime($sitemapFile));
 
@@ -143,7 +143,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
 
         // Assert: Command succeeded
         $this->assertSame(Command::SUCCESS, $exitCode);
-        
+
         // Assert: File was overwritten
         $content = \file_get_contents($sitemapFile);
         $this->assertNotFalse($content);
@@ -180,7 +180,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
             'My Song',
             new \DateTimeImmutable('2026-01-02'),
         );
-        
+
         $this->entityManager->persist($article);
         $this->entityManager->persist($song);
         $this->entityManager->flush();
@@ -196,7 +196,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         $sitemapFile = $this->tempDir . '/sitemap.xml';
         $content = \file_get_contents($sitemapFile);
         $this->assertNotFalse($content);
-        
+
         $this->assertStringContainsString('/article/my-article</loc>', $content);
         $this->assertStringContainsString('/song/xyz-789</loc>', $content);
     }
@@ -213,7 +213,7 @@ class DumpSitemapCommandTest extends DatabaseTestCase
         // Assert: Sitemap was created with only static routes
         $sitemapFile = $this->tempDir . '/sitemap.xml';
         $this->assertFileExists($sitemapFile);
-        
+
         $content = \file_get_contents($sitemapFile);
         $this->assertNotFalse($content);
         $this->assertStringContainsString('<loc>https://example.com/</loc>', $content);
