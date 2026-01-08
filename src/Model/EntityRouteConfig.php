@@ -10,6 +10,7 @@ readonly class EntityRouteConfig
 {
     /**
      * @param array<string, string> $routeParams
+     * @param list<string>|null $conditions
      */
     public function __construct(
         public string $entity,
@@ -19,7 +20,7 @@ readonly class EntityRouteConfig
         public ChangeFrequency $changefreq,
         public ?string $lastmodProperty = null,
         public ?string $queryBuilderMethod = null,
-        public ?string $conditions = null,
+        public ?array $conditions = null,
     ) {
     }
 }

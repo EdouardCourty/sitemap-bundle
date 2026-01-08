@@ -41,7 +41,8 @@ sitemap:
           priority: 0.6
           changefreq: 'weekly'
           lastmod_property: 'createdAt'
-          conditions: 'e.published = true'
+          conditions:
+              - 'e.published = true'
         - entity: 'Ecourty\SitemapBundle\Tests\Fixtures\Entity\Page'
           route: 'page_show'
           route_params:
