@@ -200,7 +200,7 @@ class EntityRouteUrlProvider implements UrlProviderInterface
         $qb = $em->createQueryBuilder();
         $qb->select('e')->from($this->config->entity, 'e');
 
-        if ($this->config->conditions !== null && \count($this->config->conditions) > 0) {
+        if (\count($this->config->conditions) > 0) {
             $qb->where(\implode(' AND ', $this->config->conditions));
         }
 

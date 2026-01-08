@@ -83,7 +83,7 @@ class Configuration implements ConfigurationInterface
                             ->end()
                             ->arrayNode('conditions')
                                 ->scalarPrototype()->end()
-                                ->defaultNull()
+                                ->defaultValue([])
                             ->end()
                         ->end()
                         ->validate()
@@ -92,8 +92,8 @@ class Configuration implements ConfigurationInterface
                                     return false;
                                 }
                                 $queryBuilder = $v['query_builder_method'] ?? null;
-                                $conditions = $v['conditions'] ?? null;
-                                return $queryBuilder !== null && $conditions !== null;
+                                $conditions = $v['conditions'] ?? [];
+                                return $queryBuilder !== null && \count($conditions) > 0;
                             })
                             ->thenInvalid('Cannot use both query_builder_method and conditions')
                         ->end()

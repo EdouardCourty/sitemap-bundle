@@ -40,7 +40,7 @@ class QueryBuilderMethodTest extends DatabaseTestCase
             changefreq: ChangeFrequency::MONTHLY,
             lastmodProperty: 'publishedAt',
             queryBuilderMethod: ArticleSitemapService::class . '::getPublishedArticlesQueryBuilder',
-            conditions: null,
+            conditions: [],
         );
 
         /** @var \Doctrine\Persistence\ManagerRegistry $doctrine */

@@ -94,7 +94,7 @@ class SitemapExtension extends Extension
                 '$changefreq' => ChangeFrequency::from($changefreq),
                 '$lastmodProperty' => $route['lastmod_property'] ?? null,
                 '$queryBuilderMethod' => $route['query_builder_method'] ?? null,
-                '$conditions' => $route['conditions'] ?? null,
+                '$conditions' => $route['conditions'] ?? [],
             ]);
 
             $provider = new Definition(EntityRouteUrlProvider::class, [
