@@ -49,16 +49,16 @@ class SitemapIndexWriter
     /**
      * @param iterable<string, iterable<SitemapUrl>> $urlsBySource
      */
-    public function writeToFile(iterable $urlsBySource, string $basePath): void
+    public function writeToDirectory(iterable $urlsBySource, string $directory): void
     {
-        $baseDir = \dirname($basePath);
+        $directory = \rtrim($directory, '/');
         $sitemapFiles = [];
 
         foreach ($urlsBySource as $sourceName => $urls) {
             $chunks = $this->processSourceChunks($sourceName, $urls);
 
             foreach ($chunks as $chunkData) {
-                $filepath = $baseDir . '/' . $chunkData['filename'];
+                $filepath = $directory . '/' . $chunkData['filename'];
                 $this->xmlWriter->writeToFile($chunkData['urls'], $filepath);
                 $sitemapFiles[] = [
                     'loc' => $this->baseUrl . '/' . $chunkData['filename'],
@@ -67,7 +67,8 @@ class SitemapIndexWriter
             }
         }
 
-        $this->writeIndexFile($sitemapFiles, $basePath);
+        $indexPath = $directory . '/sitemap.xml';
+        $this->writeIndexFile($sitemapFiles, $indexPath);
     }
 
     /**

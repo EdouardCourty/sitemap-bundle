@@ -95,6 +95,8 @@ sitemap:
 
 If you only use static generation (`sitemap:dump` command), you can skip this step.
 
+⚠️ **Important**: Dynamic generation only works for simple sitemaps (single file). If you're using sitemap indexes (`use_index: true` or above the configured URLs threshold, default to 50k URLs), you must use static generation.
+
 Add the bundle routes to `config/routes.yaml`:
 
 ```yaml
@@ -370,7 +372,16 @@ Once routes are imported, access the dynamic sitemap at:
 https://example.com/sitemap.xml
 ```
 
-The sitemap is generated on-the-fly from your configuration and database. Best for small to medium sites or when you need always up-to-date data.
+The sitemap is generated on-the-fly from your configuration and database.
+
+**⚠️ Important limitation**: Dynamic generation only works for **simple sitemaps** (single `sitemap.xml` file). If your configuration generates a sitemap index with multiple files (due to `use_index: true` or exceeding the threshold), the controller will only serve the main `sitemap.xml` index file. The individual sitemap files (`sitemap_static.xml`, `sitemap_entity_*.xml`) will **not** be accessible via controller routes.
+
+**Recommended for:**
+- Small to medium sites (< 50,000 URLs)
+- Sites needing always up-to-date data
+- Simple sitemap configuration (`use_index: false`)
+
+**For sitemap indexes, use static generation instead** (see below).
 
 ### Static Generation (Command)
 
@@ -379,23 +390,30 @@ The sitemap is generated on-the-fly from your configuration and database. Best f
 Generate a static sitemap file:
 
 ```bash
-# Generate to public/sitemap.xml (default)
+# Generate to public/ directory (default)
 php bin/console sitemap:dump
 
-# Generate to custom path (relative to public/)
-php bin/console sitemap:dump --output=sitemaps/sitemap.xml
+# Generate to custom directory (relative to public/)
+php bin/console sitemap:dump --output=sitemaps
 
-# Generate to absolute path
-php bin/console sitemap:dump --output=/var/www/public/sitemap.xml
+# Generate to absolute directory path
+php bin/console sitemap:dump --output=/var/www/public/sitemaps
 
-# Force overwrite without confirmation
+# Force overwrite existing files without confirmation
 php bin/console sitemap:dump --force
 ```
 
-**Recommended for:**
-- Large sites with many URLs (better performance)
+**Important**: The `--output` option specifies a **directory**, not a file, because the generator may create multiple files:
+- For simple sitemaps: `sitemap.xml`
+- For sitemap indexes: `sitemap.xml` (index) + `sitemap_static.xml`, `sitemap_entity_product.xml`, etc.
+
+**✅ Recommended for:**
+- Large sites with many URLs (> 50,000 URLs)
 - Sites with infrequent content updates
 - SEO-critical sites (serve static files via web server/CDN)
+- **Any configuration using sitemap indexes** (`use_index: true` or exceeding threshold)
+
+**Required for sitemap indexes**: Dynamic generation via controller cannot serve individual sitemap files. Use static generation to write all files to disk.
 
 **Tip:** Run via cron to regenerate periodically:
 ```bash
@@ -842,8 +860,9 @@ public function getSitemapData(): iterable
 1. **Use repository methods** - The bundle optimizes the SELECT to fetch only needed fields
 2. **Add database indexes** on columns used in WHERE clauses and route parameters
 3. **Enable sitemap index** for datasets >50k URLs (automatic with `use_index: 'auto'`)
-4. **Run static generation** as a cron job during low-traffic periods
-5. **Use a CDN** to cache sitemap files
+4. **⚠️ Use static generation for sitemap indexes** - Dynamic controller cannot serve individual sitemap files
+5. **Run static generation** as a cron job during low-traffic periods
+6. **Use a CDN** to cache sitemap files
 
 ### Example: Optimized for Large Datasets
 
@@ -873,148 +892,52 @@ public function getActiveProductsQueryBuilder(): QueryBuilder
 
 **Result:** Can handle millions of products with minimal memory usage.
 
-## Troubleshooting
-
-### Route not found
-
-**Error**: `Route "post_show" does not exist in routing configuration`
-
-**Solution**: Verify the route name exists:
-```bash
-php bin/console debug:router
-```
-
-### Entity not found
-
-**Error**: `Entity "App\Entity\Post" is not a valid Doctrine entity`
-
-**Solution**: Use the fully qualified class name (FQCN):
-```yaml
-entity: 'App\Entity\Post'  # ✅ Correct
-entity: 'Post'              # ❌ Wrong
-```
-
-### Property not found
-
-**Error**: `Property "slug" does not exist or is not readable`
-
-**Solution**: Ensure the property exists and is accessible:
-```php
-class Post
-{
-    private string $slug;
-    
-    public function getSlug(): string  // Must have getter
-    {
-        return $this->slug;
-    }
-}
-```
-
-### Command Parameter Issue
-
-If you get an error about `$publicDir` in `DumpSitemapCommand`, add it to your `services.yaml`:
-
-```yaml
-services:
-    Ecourty\SitemapBundle\Command\DumpSitemapCommand:
-        arguments:
-            $publicDir: '%kernel.project_dir%/public'
-        tags: ['console.command']
-```
-
-### Sitemap route not found (404)
-
-**Error**: `/sitemap.xml` returns 404
-
-**Solution**: Import the bundle routes in `config/routes.yaml`:
-
-```yaml
-sitemap:
-    resource: '@SitemapBundle/Resources/config/routes.yaml'
-```
-
-Then clear the cache:
-```bash
-php bin/console cache:clear
-```
-
-**Note**: If you only use static generation (`sitemap:dump` command), you don't need to import the routes.
-
 ## Development
 
-### Run Tests
+### Development Workflow
 
+Contributions are welcome! The project follows strict coding standards to maintain high code quality.
+
+**Setup:**
 ```bash
-composer test
+composer install
 ```
 
-### Static Analysis
-
+**Development cycle:**
 ```bash
-composer phpstan
+# Make your changes, then run quality checks:
+composer qa              # Runs all checks (phpstan, cs-check, tests)
+
+# Or run individual checks:
+composer phpstan         # Static analysis (Level 9)
+composer cs-check        # Code style check (PSR-12)
+composer cs-fix          # Fix code style automatically
+composer test            # Run PHPUnit tests
 ```
 
-### Code Style
-
-```bash
-# Fix code style
-composer cs-fix
-
-# Check code style
-composer cs-check
-```
-
-### Quality Assurance
-
-Run all checks:
-
-```bash
-composer qa
-```
-
-Or use Makefile:
-
-```bash
-make install  # Install dependencies
-make test     # Run tests
-make phpstan  # Static analysis
-make cs-fix   # Fix code style
-make qa       # All quality checks
-```
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Setup
-
-1. Clone the repository
-2. Install dependencies: `composer install`
-3. Run tests: `composer test`
-4. Check code quality: `composer qa`
+**Before submitting:**
+- Ensure `composer qa` passes without errors
+- Add tests for the new feature
+- Update documentation as needed
 
 ### Code Standards
 
-- PHP 8.3+ with strict types
-- PSR-12 code style
-- PHPStan Level 9
-- Comprehensive tests
-- Clear documentation
+All contributions must follow the project's coding standards:
+- PHP 8.3+ with `declare(strict_types=1)` in all files
+- PSR-12 code style (enforced by PHP-CS-Fixer)
+- PHPStan Level 9 (strict type safety, no mixed types)
+- Full test coverage for new features
+- Complete PHPDoc blocks with types
+
+See [AGENTS.md](AGENTS.md) for detailed developer and AI agent guide.
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Credits
-
-**Author**: Édouard Courty - [@ecourty](https://github.com/ecourty)
-
-**Documentation**: See [AGENTS.md](AGENTS.md) for detailed developer and AI agent guide.
-
 ## Support
 
-- 🐛 [Report a bug](https://github.com/ecourty/sitemap-bundle/issues)
-- 💡 [Request a feature](https://github.com/ecourty/sitemap-bundle/issues)
-- 📖 [Documentation](https://github.com/ecourty/sitemap-bundle)
+- 🐛 [Report a bug](https://github.com/EdouardCourty/sitemap-bundle/issues)
+- 💡 [Request a feature](https://github.com/EdouardCourty/sitemap-bundle/issues)
+- 📖 [Documentation](https://github.com/EdouardCourty/sitemap-bundle#readme)
 - 📧 Email: e.courty@ecour.es

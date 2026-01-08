@@ -33,20 +33,22 @@ class SitemapGenerator implements SitemapGeneratorInterface
         return $this->xmlWriter->write($urls);
     }
 
-    public function generateToFile(string $path, bool $force = false): void
+    public function generateToDirectory(string $directory, bool $force = false): void
     {
-        if (!$force && \file_exists($path)) {
-            throw new \RuntimeException(\sprintf('File already exists: %s', $path));
+        $sitemapPath = \rtrim($directory, '/') . '/sitemap.xml';
+
+        if (!$force && \file_exists($sitemapPath)) {
+            throw new \RuntimeException(\sprintf('File already exists: %s', $sitemapPath));
         }
 
         $shouldUseIndex = $this->shouldUseIndex();
 
         if ($shouldUseIndex) {
             $urlsBySource = $this->registry->getAllUrlsBySource();
-            $this->indexWriter->writeToFile($urlsBySource, $path);
+            $this->indexWriter->writeToDirectory($urlsBySource, $directory);
         } else {
             $urls = $this->registry->getAllUrls();
-            $this->xmlWriter->writeToFile($urls, $path);
+            $this->xmlWriter->writeToFile($urls, $sitemapPath);
         }
     }
 

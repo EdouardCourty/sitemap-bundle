@@ -8,7 +8,7 @@ interface SitemapGeneratorInterface
 {
     public function generate(): string;
 
-    public function generateToFile(string $path, bool $force = false): void;
+    public function generateToDirectory(string $directory, bool $force = false): void;
 
     public function countUrls(): int;
 }

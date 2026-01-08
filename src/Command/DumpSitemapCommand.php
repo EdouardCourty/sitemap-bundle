@@ -18,8 +18,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class DumpSitemapCommand extends Command
 {
-    private const DEFAULT_OUTPUT_PATH = '/sitemap.xml';
-
     public function __construct(
         private readonly SitemapGeneratorInterface $generator,
         private readonly string $publicDir,
@@ -30,8 +28,8 @@ class DumpSitemapCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Output path (absolute or relative to public dir)')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing file');
+            ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Output directory (absolute or relative to public dir)', '')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing files');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,29 +37,33 @@ class DumpSitemapCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $outputPath = $input->getOption('output');
-        \assert(\is_string($outputPath) || $outputPath === null);
+        \assert(\is_string($outputPath));
 
-        if ($outputPath === null) {
-            $path = $this->publicDir . self::DEFAULT_OUTPUT_PATH;
+        // Determine the output directory
+        if ($outputPath === '') {
+            $directory = $this->publicDir;
         } elseif (!\str_starts_with($outputPath, '/')) {
-            $path = $this->publicDir . '/' . $outputPath;
+            $directory = $this->publicDir . '/' . \rtrim($outputPath, '/');
         } else {
-            $path = $outputPath;
+            $directory = \rtrim($outputPath, '/');
         }
 
-        $force = $input->getOption('force');
+        // Ensure directory exists
+        if (!\is_dir($directory)) {
+            if (!\mkdir($directory, 0755, true) && !\is_dir($directory)) {
+                $io->error(\sprintf('Failed to create directory: %s', $directory));
 
-        if (\file_exists($path) && !$force) {
-            $io->warning(\sprintf('File already exists: %s', $path));
-            if (!$io->confirm('Overwrite?', false)) {
                 return Command::FAILURE;
             }
         }
 
+        $force = $input->getOption('force');
+        \assert(\is_bool($force));
+
         $startTime = \microtime(true);
 
         try {
-            $this->generator->generateToFile($path, force: true);
+            $this->generator->generateToDirectory($directory, force: $force);
         } catch (\Exception $e) {
             $io->error(\sprintf('Failed to generate sitemap: %s', $e->getMessage()));
 
@@ -70,7 +72,7 @@ class DumpSitemapCommand extends Command
 
         $duration = \microtime(true) - $startTime;
 
-        $io->success(\sprintf('Sitemap generated in %.2f seconds: %s', $duration, $path));
+        $io->success(\sprintf('Sitemap(s) generated in %.2f seconds in: %s', $duration, $directory));
 
         return Command::SUCCESS;
     }

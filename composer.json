@@ -52,8 +52,7 @@
             "@phpstan",
             "@cs-check",
             "@test"
-        ],
-        "serve": "php -S localhost:8000 -t tests/app/public"
+        ]
     },
     "config": {
         "sort-packages": true,

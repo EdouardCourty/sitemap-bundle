@@ -165,7 +165,7 @@ class SitemapGeneratorTest extends TestCase
         $this->assertSame('<urlset>...</urlset>', $result);
     }
 
-    public function testGenerateToFileThrowsIfFileExists(): void
+    public function testGenerateToDirectoryThrowsIfFileExists(): void
     {
         $provider = $this->createMock(UrlProviderInterface::class);
         $provider->method('count')->willReturn(1);
@@ -180,20 +180,23 @@ class SitemapGeneratorTest extends TestCase
             50,
         );
 
-        $tempFile = \tempnam(\sys_get_temp_dir(), 'sitemap_test_');
-        \assert($tempFile !== false);
+        $tempDir = \sys_get_temp_dir() . '/sitemap_test_' . \uniqid();
+        \mkdir($tempDir);
+        $sitemapFile = $tempDir . '/sitemap.xml';
+        \file_put_contents($sitemapFile, 'existing content');
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage("File already exists: {$tempFile}");
+        $this->expectExceptionMessage("File already exists: {$sitemapFile}");
 
         try {
-            $generator->generateToFile($tempFile, false);
+            $generator->generateToDirectory($tempDir, false);
         } finally {
-            @\unlink($tempFile);
+            @\unlink($sitemapFile);
+            @\rmdir($tempDir);
         }
     }
 
-    public function testGenerateToFileWithForceOverwrites(): void
+    public function testGenerateToDirectoryWithForceOverwrites(): void
     {
         $urls = [
             new SitemapUrl('https://example.com/page1', 1.0, ChangeFrequency::DAILY),
@@ -205,9 +208,13 @@ class SitemapGeneratorTest extends TestCase
 
         $this->registry = new UrlProviderRegistry([$provider]);
 
+        $tempDir = \sys_get_temp_dir() . '/sitemap_test_' . \uniqid();
+        \mkdir($tempDir);
+        $sitemapFile = $tempDir . '/sitemap.xml';
+
         $this->xmlWriter->expects($this->once())
             ->method('writeToFile')
-            ->with($this->isInstanceOf(\Generator::class), $this->anything());
+            ->with($this->isInstanceOf(\Generator::class), $sitemapFile);
 
         $generator = new SitemapGenerator(
             $this->registry,
@@ -217,13 +224,11 @@ class SitemapGeneratorTest extends TestCase
             50,
         );
 
-        $tempFile = \tempnam(\sys_get_temp_dir(), 'sitemap_test_');
-        \assert($tempFile !== false);
-
         try {
-            $generator->generateToFile($tempFile, true);
+            $generator->generateToDirectory($tempDir, true);
         } finally {
-            @\unlink($tempFile);
+            @\unlink($sitemapFile);
+            @\rmdir($tempDir);
         }
     }
 
@@ -248,7 +253,7 @@ class SitemapGeneratorTest extends TestCase
         $this->assertSame(35, $generator->countUrls());
     }
 
-    public function testGenerateToFileUsesIndexWhenNeeded(): void
+    public function testGenerateToDirectoryUsesIndexWhenNeeded(): void
     {
         $urls = \array_map(
             fn (int $i) => new SitemapUrl("https://example.com/page{$i}", 0.5, ChangeFrequency::WEEKLY),
@@ -263,8 +268,8 @@ class SitemapGeneratorTest extends TestCase
         $this->registry = new UrlProviderRegistry([$provider]);
 
         $this->indexWriter->expects($this->once())
-            ->method('writeToFile')
-            ->with($this->anything(), '/tmp/sitemap.xml');
+            ->method('writeToDirectory')
+            ->with($this->anything(), '/tmp');
 
         $this->xmlWriter->expects($this->never())
             ->method('writeToFile');
@@ -277,6 +282,6 @@ class SitemapGeneratorTest extends TestCase
             50,
         );
 
-        $generator->generateToFile('/tmp/sitemap.xml', true);
+        $generator->generateToDirectory('/tmp', true);
     }
 }

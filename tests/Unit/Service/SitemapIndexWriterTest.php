@@ -182,7 +182,7 @@ class SitemapIndexWriterTest extends TestCase
         // Exception can be thrown when writing sitemap file or index file
         $this->expectExceptionMessageMatches('/Cannot write (to file|index file): \/invalid\/path\//');
 
-        $writer->writeToFile($urlsBySource, '/invalid/path/sitemap.xml');
+        $writer->writeToDirectory($urlsBySource, '/invalid/path');
     }
 
     public function testIndexUsesBaseUrl(): void
