@@ -96,7 +96,7 @@ If you only use static generation (`sitemap:dump` command), you can skip this st
 Add the bundle routes to `config/routes.yaml`:
 
 ```yaml
-ecourty_sitemap:
+sitemap:
     resource: '@SitemapBundle/Resources/config/routes.yaml'
 ```
 
@@ -203,7 +203,47 @@ sitemap:
           changefreq: 'monthly'
 ```
 
-#### Case 4: Large Dataset (Automatic Index)
+#### Case 4: Filtering with DQL Conditions
+
+When you need simple filtering without creating custom repository methods, use `conditions`:
+
+```yaml
+sitemap:
+    base_url: 'https://myblog.com'
+    
+    entity_routes:
+        # Only published articles
+        - entity: 'App\Entity\Article'
+          route: 'article_show'
+          route_params:
+              slug: 'slug'
+          priority: 0.8
+          changefreq: 'weekly'
+          lastmod_property: 'updatedAt'
+          conditions: 'e.published = true AND e.deletedAt IS NULL'
+        
+        # Only active products in stock
+        - entity: 'App\Entity\Product'
+          route: 'product_show'
+          route_params:
+              slug: 'slug'
+          priority: 0.7
+          changefreq: 'daily'
+          conditions: 'e.active = true AND e.stock > 0'
+        
+        # Only upcoming events
+        - entity: 'App\Entity\Event'
+          route: 'event_show'
+          route_params:
+              id: 'id'
+          priority: 0.9
+          changefreq: 'daily'
+          conditions: 'e.startDate >= CURRENT_DATE()'
+```
+
+**Note**: Use the alias `e` in your DQL conditions. You cannot combine `conditions` with `query_builder_method`.
+
+#### Case 5: Large Dataset (Automatic Index)
 
 For sites with 50,000+ URLs, the bundle automatically creates a sitemap index:
 
@@ -573,6 +613,107 @@ entity_routes:
       conditions: 'e.published = true AND e.deletedAt IS NULL'
 ```
 
+### Custom URL Provider
+
+For complex URL generation needs (e.g., CMS pages from database with dynamic routing), implement a custom `UrlProviderInterface`.
+
+**Use cases:**
+- Dynamic routes based on page type stored in database
+- External data sources (API, MongoDB, etc.)
+- Complex URL generation logic
+- Custom filtering or business rules
+
+**Example: CMS pages with type-based routing**
+
+```php
+// src/Service/CmsPageUrlProvider.php
+namespace App\Service;
+
+use Doctrine\ORM\EntityManagerInterface;
+use Ecourty\SitemapBundle\Contract\UrlProviderInterface;
+use Ecourty\SitemapBundle\Enum\ChangeFrequency;
+use Ecourty\SitemapBundle\Model\SitemapUrl;
+use App\Entity\CmsPage;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+
+class CmsPageUrlProvider implements UrlProviderInterface
+{
+    public function __construct(
+        private EntityManagerInterface $em,
+        private UrlGeneratorInterface $urlGenerator,
+        private string $baseUrl,
+    ) {
+    }
+
+    public function getUrls(): iterable
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select('p')
+            ->from(CmsPage::class, 'p')
+            ->where('p.status = :published')
+            ->setParameter('published', 'published')
+            ->orderBy('p.updatedAt', 'DESC');
+
+        foreach ($qb->getQuery()->toIterable() as $page) {
+            // Different page types use different routes
+            $routeName = match ($page->getType()) {
+                'article' => 'cms_article_show',
+                'landing' => 'cms_landing_show',
+                'product' => 'cms_product_show',
+                default => 'cms_page_show',
+            };
+
+            $path = $this->urlGenerator->generate($routeName, [
+                'slug' => $page->getSlug(),
+            ]);
+
+            yield new SitemapUrl(
+                loc: rtrim($this->baseUrl, '/') . $path,
+                priority: $page->getPriority(), // From DB
+                changefreq: ChangeFrequency::from($page->getChangefreq()),
+                lastmod: $page->getUpdatedAt(),
+            );
+        }
+    }
+
+    public function count(): int
+    {
+        return (int) $this->em->createQueryBuilder()
+            ->select('COUNT(p.id)')
+            ->from(CmsPage::class, 'p')
+            ->where('p.status = :published')
+            ->setParameter('published', 'published')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function getSourceName(): string
+    {
+        return 'cms_pages';
+    }
+}
+```
+
+**Configuration:**
+
+```yaml
+# config/services.yaml
+services:
+    App\Service\CmsPageUrlProvider:
+        arguments:
+            $baseUrl: '%sitemap.base_url%'
+        # Automatically tagged as 'sitemap.url_provider' via autoconfiguration
+```
+
+That's it! The provider will be automatically discovered and used. No additional configuration needed.
+
+**Benefits:**
+- ✅ Full control over URL generation
+- ✅ Type-safe with PHP 8.3 features
+- ✅ Memory-efficient with `toIterable()`
+- ✅ Automatically registered via Symfony autoconfiguration
+- ✅ Works seamlessly with sitemap index splitting
+
 ### Multiple Route Parameters
 
 Map multiple entity properties to route parameters:
@@ -645,6 +786,11 @@ class CustomUrlProvider implements UrlProviderInterface
         );
     }
 
+    public function count(): int
+    {
+        return 1; // Or calculate based on your data source
+    }
+
     public function getSourceName(): string
     {
         return 'custom_source';
@@ -652,13 +798,7 @@ class CustomUrlProvider implements UrlProviderInterface
 }
 ```
 
-Register it in `services.yaml`:
-
-```yaml
-services:
-    App\Sitemap\CustomUrlProvider:
-        tags: ['ecourty_sitemap.url_provider']
-```
+That's it! The service will be automatically registered and tagged thanks to Symfony's autoconfiguration.
 
 ## Performance
 
@@ -788,7 +928,7 @@ services:
 **Solution**: Import the bundle routes in `config/routes.yaml`:
 
 ```yaml
-ecourty_sitemap:
+sitemap:
     resource: '@SitemapBundle/Resources/config/routes.yaml'
 ```
 

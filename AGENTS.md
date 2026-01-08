@@ -138,7 +138,7 @@ sitemap:
 ### Adding New URL Providers
 
 1. Implement `UrlProviderInterface`
-2. Tag service with `ecourty_sitemap.url_provider`
+2. Service will be automatically tagged with `sitemap.url_provider` via autoconfiguration
 3. Provide unique source name
 
 Example:

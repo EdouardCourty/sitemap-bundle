@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ecourty\SitemapBundle\DependencyInjection;
 
+use Ecourty\SitemapBundle\Contract\UrlProviderInterface;
 use Ecourty\SitemapBundle\Enum\ChangeFrequency;
 use Ecourty\SitemapBundle\Model\EntityRouteConfig;
 use Ecourty\SitemapBundle\Model\StaticRouteConfig;
@@ -18,7 +19,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
-class EcourtySitemapExtension extends Extension
+class SitemapExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -28,9 +29,12 @@ class EcourtySitemapExtension extends Extension
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
 
-        $container->setParameter('ecourty_sitemap.base_url', $config['base_url']);
-        $container->setParameter('ecourty_sitemap.use_index', $config['use_index']);
-        $container->setParameter('ecourty_sitemap.index_threshold', $config['index_threshold']);
+        $container->registerForAutoconfiguration(UrlProviderInterface::class)
+            ->addTag('sitemap.url_provider');
+
+        $container->setParameter('sitemap.base_url', $config['base_url']);
+        $container->setParameter('sitemap.use_index', $config['use_index']);
+        $container->setParameter('sitemap.index_threshold', $config['index_threshold']);
 
         $this->registerStaticRouteProvider($container, $config['static_routes'], $config['base_url']);
         $this->registerEntityRouteProviders($container, $config['entity_routes'], $config['base_url']);
@@ -69,9 +73,9 @@ class EcourtySitemapExtension extends Extension
             '$urlGenerator' => new Reference('router'),
             '$baseUrl' => $baseUrl,
         ]);
-        $provider->addTag('ecourty_sitemap.url_provider');
+        $provider->addTag('sitemap.url_provider');
 
-        $container->setDefinition('ecourty_sitemap.provider.static', $provider);
+        $container->setDefinition('sitemap.provider.static', $provider);
     }
 
     /**
@@ -101,9 +105,9 @@ class EcourtySitemapExtension extends Extension
                 '$container' => new Reference('service_container'),
                 '$baseUrl' => $baseUrl,
             ]);
-            $provider->addTag('ecourty_sitemap.url_provider');
+            $provider->addTag('sitemap.url_provider');
 
-            $container->setDefinition(\sprintf('ecourty_sitemap.provider.entity_%d', $index), $provider);
+            $container->setDefinition(\sprintf('sitemap.provider.entity_%d', $index), $provider);
         }
     }
 

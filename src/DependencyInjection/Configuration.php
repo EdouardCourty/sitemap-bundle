@@ -11,7 +11,7 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('ecourty_sitemap');
+        $treeBuilder = new TreeBuilder('sitemap');
         $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
