@@ -12,4 +12,3 @@ parameters:
     excludePaths:
         - tests/Fixtures
         - tests/App
-        - tests/app
