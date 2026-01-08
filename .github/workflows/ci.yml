@@ -1,3 +1,4 @@
+---
 name: CI
 
 on:
@@ -10,12 +11,15 @@ jobs:
   tests:
     name: Tests (PHP ${{ matrix.php }}, Symfony ${{ matrix.symfony }})
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        php: ['8.3', '8.4']
-        symfony: ['6.4.*', '7.0.*', '7.1.*']
-    
+        php: ['8.3', '8.4', '8.5']
+        symfony: ['6.4.*', '7.4.*', '8.0.*']
+        exclude:
+          - php: '8.3'
+            symfony: '8.0.*'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
