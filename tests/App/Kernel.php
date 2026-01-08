@@ -86,11 +86,11 @@ class Kernel extends BaseKernel
             ->setAutowired(true)
             ->setPublic(true);
 
-        $loader->load($this->getProjectDir() . '/tests/app/config/sitemap.yaml');
+        $loader->load($this->getProjectDir() . '/tests/App/config/sitemap.yaml');
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
-        $routes->import($this->getProjectDir() . '/tests/app/config/routes.yaml');
+        $routes->import($this->getProjectDir() . '/tests/App/config/routes.yaml');
     }
 }
