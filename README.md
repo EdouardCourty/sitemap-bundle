@@ -1,5 +1,7 @@
 # ecourty/sitemap-bundle
 
+[![CI](https://github.com/EdouardCourty/sitemap-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/EdouardCourty/sitemap-bundle/actions/workflows/ci.yml)
+
 A Symfony bundle for generating XML sitemaps. Supports static routes, dynamic Doctrine entities, and extensive configuration options.
 
 The bundle handles both dynamic generation via controller and static file generation via command.  
