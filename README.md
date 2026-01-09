@@ -21,6 +21,14 @@ Memory-efficient streaming prevents issues with large datasets.
   - [Static Generation (Command)](#static-generation-command)
   - [Generated XML Output](#generated-xml-output)
 - [Advanced Configuration](#advanced-configuration)
+  - [Custom Repository Method](#custom-repository-method)
+  - [Custom Service with FQCN::method](#custom-service-with-fqcnmethod)
+  - [DQL Conditions](#dql-conditions)
+  - [Multiple Route Parameters](#multiple-route-parameters)
+  - [Sitemap Index Modes](#sitemap-index-modes)
+- [Extensibility](#extensibility)
+  - [Custom URL Providers](#custom-url-providers)
+  - [Use Cases for Custom Providers](#use-cases-for-custom-providers)
 - [Architecture](#architecture)
 - [Performance](#performance)
 - [Troubleshooting](#troubleshooting)
@@ -633,107 +641,6 @@ entity_routes:
       conditions: 'e.published = true AND e.deletedAt IS NULL'
 ```
 
-### Custom URL Provider
-
-For complex URL generation needs (e.g., CMS pages from database with dynamic routing), implement a custom `UrlProviderInterface`.
-
-**Use cases:**
-- Dynamic routes based on page type stored in database
-- External data sources (API, MongoDB, etc.)
-- Complex URL generation logic
-- Custom filtering or business rules
-
-**Example: CMS pages with type-based routing**
-
-```php
-// src/Service/CmsPageUrlProvider.php
-namespace App\Service;
-
-use Doctrine\ORM\EntityManagerInterface;
-use Ecourty\SitemapBundle\Contract\UrlProviderInterface;
-use Ecourty\SitemapBundle\Enum\ChangeFrequency;
-use Ecourty\SitemapBundle\Model\SitemapUrl;
-use App\Entity\CmsPage;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-
-class CmsPageUrlProvider implements UrlProviderInterface
-{
-    public function __construct(
-        private EntityManagerInterface $em,
-        private UrlGeneratorInterface $urlGenerator,
-        private string $baseUrl,
-    ) {
-    }
-
-    public function getUrls(): iterable
-    {
-        $qb = $this->em->createQueryBuilder()
-            ->select('p')
-            ->from(CmsPage::class, 'p')
-            ->where('p.status = :published')
-            ->setParameter('published', 'published')
-            ->orderBy('p.updatedAt', 'DESC');
-
-        foreach ($qb->getQuery()->toIterable() as $page) {
-            // Different page types use different routes
-            $routeName = match ($page->getType()) {
-                'article' => 'cms_article_show',
-                'landing' => 'cms_landing_show',
-                'product' => 'cms_product_show',
-                default => 'cms_page_show',
-            };
-
-            $path = $this->urlGenerator->generate($routeName, [
-                'slug' => $page->getSlug(),
-            ]);
-
-            yield new SitemapUrl(
-                loc: rtrim($this->baseUrl, '/') . $path,
-                priority: $page->getPriority(), // From DB
-                changefreq: ChangeFrequency::from($page->getChangefreq()),
-                lastmod: $page->getUpdatedAt(),
-            );
-        }
-    }
-
-    public function count(): int
-    {
-        return (int) $this->em->createQueryBuilder()
-            ->select('COUNT(p.id)')
-            ->from(CmsPage::class, 'p')
-            ->where('p.status = :published')
-            ->setParameter('published', 'published')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
-    public function getSourceName(): string
-    {
-        return 'cms_pages';
-    }
-}
-```
-
-**Configuration:**
-
-```yaml
-# config/services.yaml
-services:
-    App\Service\CmsPageUrlProvider:
-        arguments:
-            $baseUrl: '%sitemap.base_url%'
-        # Automatically tagged as 'sitemap.url_provider' via autoconfiguration
-```
-
-That's it! The provider will be automatically discovered and used. No additional configuration needed.
-
-**Benefits:**
-- ✅ Full control over URL generation
-- ✅ Type-safe with PHP 8.3 features
-- ✅ Memory-efficient with `toIterable()`
-- ✅ Automatically registered via Symfony autoconfiguration
-- ✅ Works seamlessly with sitemap index splitting
-
 ### Multiple Route Parameters
 
 Map multiple entity properties to route parameters:
@@ -754,13 +661,13 @@ Control how sitemaps are split:
 
 ```yaml
 sitemap:
-    # Auto mode (default): index if total URLs > 50,000
+    # Auto mode (default): index if total URLs > threshold
     use_index: 'auto'
     index_threshold: 50000
-    
+
     # Always use index (even with few URLs)
     use_index: true
-    
+
     # Never use index (single sitemap.xml)
     use_index: false
 ```
@@ -774,6 +681,96 @@ sitemap_entity_post_1.xml    # Post entities (first 50k)
 sitemap_entity_post_2.xml    # Post entities (remaining)
 ```
 
+## Extensibility
+
+### Custom URL Providers
+
+For complex URL generation needs beyond static routes and Doctrine entities, implement a custom `UrlProviderInterface`.
+
+This is the most powerful extension point in the bundle, giving you complete control over URL generation.
+
+### Use Cases for Custom Providers
+
+- **Multi-entity relationships**: URLs requiring parameters from different entities (e.g., `/category/{slug}/product/{id}`)
+- **Dynamic routing**: Different routes based on entity type or database fields
+- **External data sources**: Generate URLs from APIs, MongoDB, Redis, etc.
+- **Complex business logic**: Custom filtering, permissions, multi-tenancy
+- **Legacy systems**: Integrate with existing URL structures
+
+### Implementation Example: Products with Category Parameters
+
+This example shows how to generate URLs like `/category/electronics/product/smartphone-x` where both category and product slugs are needed:
+
+```php
+// src/Service/ProductUrlProvider.php
+namespace App\Service;
+
+use Doctrine\ORM\EntityManagerInterface;
+use Ecourty\SitemapBundle\Contract\UrlProviderInterface;
+use Ecourty\SitemapBundle\Enum\ChangeFrequency;
+use Ecourty\SitemapBundle\Model\SitemapUrl;
+use App\Entity\Product;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+
+class ProductUrlProvider implements UrlProviderInterface
+{
+    // Inject dependencies
+
+    public function getUrls(): iterable
+    {
+        // Join with Category to get both slugs in one query
+        $qb = $this->em->createQueryBuilder()
+            ->select('p', 'c') // Select both product and category
+            ->from(Product::class, 'p')
+            ->innerJoin('p.category', 'c')
+            ->where('p.active = true')
+            ->andWhere('c.active = true')
+            ->orderBy('p.updatedAt', 'DESC');
+
+        foreach ($qb->getQuery()->toIterable() as $product) {            
+            // Generate URL with both category and product parameters
+            $path = $this->urlGenerator->generate('product_show', [
+                'categorySlug' => $product->getCategory()->getSlug(),
+                'productSlug' => $product->getSlug(),
+            ]);
+
+            yield new SitemapUrl(
+                loc: rtrim($this->baseUrl, '/') . $path,
+                priority: 0.7,
+                changefreq: ChangeFrequency::WEEKLY,
+                lastmod: $product->getUpdatedAt(),
+            );
+        }
+    }
+
+    public function count(): int
+    {
+        // Implement the count efficiently
+        // $qb = $this->em->createQueryBuilder()
+        //    ->select('COUNT(p.id)')
+        //    ...
+    }
+
+    public function getSourceName(): string
+    {
+        return 'products';
+    }
+}
+```
+
+**Configuration:**
+
+```yaml
+# config/services.yaml
+services:
+    App\Service\ProductUrlProvider:
+        arguments:
+            $baseUrl: '%sitemap.base_url%'
+        # Automatically tagged as 'sitemap.url_provider' via autoconfiguration
+```
+
+That's it! The provider will be automatically discovered and used. No additional configuration needed.
+
 ## Architecture
 
 ### Design Patterns
@@ -785,40 +782,12 @@ sitemap_entity_post_2.xml    # Post entities (remaining)
 
 ### Extension Points
 
-#### Custom URL Provider
+The bundle is designed for extensibility:
 
-Create custom URL sources by implementing `UrlProviderInterface`:
-
-```php
-use Ecourty\SitemapBundle\Contract\UrlProviderInterface;
-use Ecourty\SitemapBundle\Enum\ChangeFrequency;
-use Ecourty\SitemapBundle\Model\SitemapUrl;
-
-class CustomUrlProvider implements UrlProviderInterface
-{
-    public function getUrls(): iterable
-    {
-        yield new SitemapUrl(
-            loc: 'https://example.com/custom-page',
-            priority: 0.8,
-            changefreq: ChangeFrequency::DAILY,
-            lastmod: new \DateTime(),
-        );
-    }
-
-    public function count(): int
-    {
-        return 1; // Or calculate based on your data source
-    }
-
-    public function getSourceName(): string
-    {
-        return 'custom_source';
-    }
-}
-```
-
-That's it! The service will be automatically registered and tagged thanks to Symfony's autoconfiguration.
+- **Custom URL Providers**: Implement `UrlProviderInterface` for any URL source (see [Extensibility](#extensibility) section)
+- **Custom Repository Methods**: Fine-tune Doctrine queries for entity routes
+- **Tagged Services**: Automatic discovery via `sitemap.url_provider` tag
+- **Configuration DTOs**: Type-safe configuration objects
 
 ## Performance
 
