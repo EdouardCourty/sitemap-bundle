@@ -24,6 +24,7 @@ class SitemapExtension extends Extension
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
+        /** @var array{base_url: string, use_index: bool|string, index_threshold: int, static_routes: array<array<string, mixed>>, entity_routes: array<array<string, mixed>>} $config */
         $config = $this->processConfiguration($configuration, $configs);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));

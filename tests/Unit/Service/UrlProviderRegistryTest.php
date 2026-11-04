@@ -14,7 +14,7 @@ class UrlProviderRegistryTest extends TestCase
 {
     public function testGetAllUrlsBySource(): void
     {
-        $provider1 = $this->createMock(UrlProviderInterface::class);
+        $provider1 = $this->createStub(UrlProviderInterface::class);
         $provider1->method('getSourceName')->willReturn('source1');
         $provider1->method('getUrls')->willReturn([
             new SitemapUrl(
@@ -24,7 +24,7 @@ class UrlProviderRegistryTest extends TestCase
             ),
         ]);
 
-        $provider2 = $this->createMock(UrlProviderInterface::class);
+        $provider2 = $this->createStub(UrlProviderInterface::class);
         $provider2->method('getSourceName')->willReturn('source2');
         $provider2->method('getUrls')->willReturn([
             new SitemapUrl(
@@ -53,7 +53,7 @@ class UrlProviderRegistryTest extends TestCase
 
     public function testGetAllUrls(): void
     {
-        $provider1 = $this->createMock(UrlProviderInterface::class);
+        $provider1 = $this->createStub(UrlProviderInterface::class);
         $provider1->method('getUrls')->willReturn([
             new SitemapUrl(
                 loc: 'https://example.com/page1',
@@ -62,7 +62,7 @@ class UrlProviderRegistryTest extends TestCase
             ),
         ]);
 
-        $provider2 = $this->createMock(UrlProviderInterface::class);
+        $provider2 = $this->createStub(UrlProviderInterface::class);
         $provider2->method('getUrls')->willReturn([
             new SitemapUrl(
                 loc: 'https://example.com/page2',
@@ -84,7 +84,7 @@ class UrlProviderRegistryTest extends TestCase
 
     public function testCount(): void
     {
-        $provider1 = $this->createMock(UrlProviderInterface::class);
+        $provider1 = $this->createStub(UrlProviderInterface::class);
         $provider1->method('getUrls')->willReturn([
             new SitemapUrl(
                 loc: 'https://example.com/page1',
@@ -94,7 +94,7 @@ class UrlProviderRegistryTest extends TestCase
         ]);
         $provider1->method('count')->willReturn(1);
 
-        $provider2 = $this->createMock(UrlProviderInterface::class);
+        $provider2 = $this->createStub(UrlProviderInterface::class);
         $provider2->method('getUrls')->willReturn([
             new SitemapUrl(
                 loc: 'https://example.com/page2',
