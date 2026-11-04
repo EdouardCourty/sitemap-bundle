@@ -93,7 +93,7 @@ class Configuration implements ConfigurationInterface
                                 }
                                 $queryBuilder = $v['query_builder_method'] ?? null;
                                 $conditions = $v['conditions'] ?? [];
-                                return $queryBuilder !== null && \count($conditions) > 0;
+                                return $queryBuilder !== null && \is_array($conditions) && $conditions !== [];
                             })
                             ->thenInvalid('Cannot use both query_builder_method and conditions')
                         ->end()

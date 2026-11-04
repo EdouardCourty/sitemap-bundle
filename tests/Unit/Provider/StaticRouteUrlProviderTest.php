@@ -88,7 +88,7 @@ class StaticRouteUrlProviderTest extends TestCase
             ),
         ];
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')
             ->willReturn('/');
 
@@ -108,7 +108,7 @@ class StaticRouteUrlProviderTest extends TestCase
             new StaticRouteConfig('route3', 0.5, ChangeFrequency::WEEKLY),
         ];
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $provider = new StaticRouteUrlProvider($configs, $urlGenerator, 'https://example.com');
 
         $this->assertSame(3, $provider->count());
@@ -116,7 +116,7 @@ class StaticRouteUrlProviderTest extends TestCase
 
     public function testGetSourceName(): void
     {
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $provider = new StaticRouteUrlProvider([], $urlGenerator, 'https://example.com');
 
         $this->assertSame('static', $provider->getSourceName());
@@ -124,7 +124,7 @@ class StaticRouteUrlProviderTest extends TestCase
 
     public function testEmptyConfigsReturnsEmptyArray(): void
     {
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $provider = new StaticRouteUrlProvider([], $urlGenerator, 'https://example.com');
 
         $urls = \iterator_to_array($provider->getUrls());

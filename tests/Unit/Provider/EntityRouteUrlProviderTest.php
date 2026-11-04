@@ -37,9 +37,9 @@ class EntityRouteUrlProviderTest extends TestCase
             ->with('App\\Entity\\NonExistent')
             ->willReturn(null);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
-        $container = $this->createMock(ContainerInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -66,20 +66,20 @@ class EntityRouteUrlProviderTest extends TestCase
             changefreq: ChangeFrequency::WEEKLY,
         );
 
-        [$em, $repository, $qb, $query] = $this->createDoctrineStack();
+        $query = $this->createMock(Query::class);
+        [$em, $repository, $qb] = $this->createDoctrineStack($query);
 
         $entity = new \stdClass();
         $entity->id = 1;
 
-        // @phpstan-ignore method.notFound (PHPUnit mock)
         $query->expects($this->once())
             ->method('toIterable')
             ->willReturn([$entity]);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
 
         $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
         $propertyAccessor->expects($this->once())
@@ -87,7 +87,7 @@ class EntityRouteUrlProviderTest extends TestCase
             ->with($entity, 'nonExistentProperty')
             ->willReturn(false);
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -114,16 +114,16 @@ class EntityRouteUrlProviderTest extends TestCase
             changefreq: ChangeFrequency::WEEKLY,
         );
 
-        [$em, $repository, $qb, $query] = $this->createDoctrineStack();
+        $query = $this->createStub(Query::class);
+        [$em, $repository, $qb] = $this->createDoctrineStack($query);
 
         $entity = new \stdClass();
         $entity->slug = 'test-slug';
 
-        // @phpstan-ignore method.notFound (PHPUnit mock)
         $query->method('toIterable')
             ->willReturn([$entity]);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
@@ -131,11 +131,11 @@ class EntityRouteUrlProviderTest extends TestCase
             ->method('generate')
             ->willThrowException(new RouteNotFoundException());
 
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
         $propertyAccessor->method('isReadable')->willReturn(true);
-        $propertyAccessor->method('getValue')->with($entity, 'slug')->willReturn('test-slug');
+        $propertyAccessor->method('getValue')->willReturnMap([[$entity, 'slug', 'test-slug']]);
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -163,29 +163,29 @@ class EntityRouteUrlProviderTest extends TestCase
             lastmodProperty: 'nonExistentDate',
         );
 
-        [$em, $repository, $qb, $query] = $this->createDoctrineStack();
+        $query = $this->createMock(Query::class);
+        [$em, $repository, $qb] = $this->createDoctrineStack($query);
 
         $entity = new \stdClass();
         $entity->slug = 'test-slug';
 
-        // @phpstan-ignore method.notFound (PHPUnit mock)
         $query->expects($this->once())
             ->method('toIterable')
             ->willReturn([$entity]);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')->willReturn('/product/test-slug');
 
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
         $propertyAccessor->method('isReadable')
             ->willReturnCallback(fn ($obj, $prop) => $prop === 'slug');
 
-        $propertyAccessor->method('getValue')->with($entity, 'slug')->willReturn('test-slug');
+        $propertyAccessor->method('getValue')->willReturnMap([[$entity, 'slug', 'test-slug']]);
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -213,24 +213,24 @@ class EntityRouteUrlProviderTest extends TestCase
             lastmodProperty: 'createdAt',
         );
 
-        [$em, $repository, $qb, $query] = $this->createDoctrineStack();
+        $query = $this->createMock(Query::class);
+        [$em, $repository, $qb] = $this->createDoctrineStack($query);
 
         $entity = new \stdClass();
         $entity->slug = 'test-slug';
         $entity->createdAt = 'not-a-datetime';
 
-        // @phpstan-ignore method.notFound (PHPUnit mock)
         $query->expects($this->once())
             ->method('toIterable')
             ->willReturn([$entity]);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')->willReturn('/product/test-slug');
 
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
         $propertyAccessor->method('isReadable')->willReturn(true);
         $propertyAccessor->method('getValue')
             ->willReturnCallback(fn ($obj, $prop) => match ($prop) {
@@ -239,7 +239,7 @@ class EntityRouteUrlProviderTest extends TestCase
                 default => null,
             });
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -266,24 +266,24 @@ class EntityRouteUrlProviderTest extends TestCase
             changefreq: ChangeFrequency::WEEKLY,
         );
 
-        $qb = $this->createMock(QueryBuilder::class);
+        $qb = $this->createStub(QueryBuilder::class);
         $qb->method('getRootAliases')->willReturn([]);
 
-        $countQb = $this->createMock(QueryBuilder::class);
+        $countQb = $this->createStub(QueryBuilder::class);
         $countQb->method('getRootAliases')->willReturn([]);
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
         $em->method('createQueryBuilder')->willReturn($qb);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
-        $container = $this->createMock(ContainerInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -311,16 +311,16 @@ class EntityRouteUrlProviderTest extends TestCase
             queryBuilderMethod: 'App\\Service\\NonExistent::getQueryBuilder',
         );
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
 
         $container = $this->createMock(ContainerInterface::class);
         $container->expects($this->once())
@@ -354,20 +354,20 @@ class EntityRouteUrlProviderTest extends TestCase
             queryBuilderMethod: 'App\\Service\\MyService::nonExistentMethod',
         );
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
 
         $service = new \stdClass();
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturn(true);
         $container->method('get')->willReturn($service);
 
@@ -397,16 +397,16 @@ class EntityRouteUrlProviderTest extends TestCase
             queryBuilderMethod: 'App\\Service\\MyService::getBadQueryBuilder',
         );
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
 
         $service = new class () {
             public function getBadQueryBuilder(): string
@@ -415,7 +415,7 @@ class EntityRouteUrlProviderTest extends TestCase
             }
         };
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturn(true);
         $container->method('get')->willReturn($service);
 
@@ -445,17 +445,17 @@ class EntityRouteUrlProviderTest extends TestCase
             queryBuilderMethod: 'nonExistentMethod',
         );
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
-        $container = $this->createMock(ContainerInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -497,15 +497,15 @@ class EntityRouteUrlProviderTest extends TestCase
             }
         };
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $doctrine = $this->createMock(ManagerRegistry::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManagerForClass')->willReturn($em);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
-        $container = $this->createMock(ContainerInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -538,9 +538,9 @@ class EntityRouteUrlProviderTest extends TestCase
             ->with('App\\Entity\\NonExistent')
             ->willReturn(null);
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
-        $container = $this->createMock(ContainerInterface::class);
+        $urlGenerator = $this->createStub(UrlGeneratorInterface::class);
+        $propertyAccessor = $this->createStub(PropertyAccessorInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
 
         $provider = new EntityRouteUrlProvider(
             $config,
@@ -558,21 +558,23 @@ class EntityRouteUrlProviderTest extends TestCase
     }
 
     /**
+     * @param Query<array-key, mixed>|null $query
+     *
      * @return array{EntityManagerInterface, EntityRepository<object>, QueryBuilder, Query<array-key, mixed>}
      */
-    private function createDoctrineStack(): array
+    private function createDoctrineStack(?Query $query = null): array
     {
-        $query = $this->createMock(Query::class);
+        $query ??= $this->createStub(Query::class);
 
-        $qb = $this->createMock(QueryBuilder::class);
+        $qb = $this->createStub(QueryBuilder::class);
         $qb->method('select')->willReturnSelf();
         $qb->method('from')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = $this->createStub(EntityRepository::class);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
         $em->method('createQueryBuilder')->willReturn($qb);
 

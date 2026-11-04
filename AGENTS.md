@@ -226,9 +226,11 @@ entity_routes:
 
 ## Testing Strategy
 
+PHPUnit is configured to fail on risky tests, warnings, notices, deprecations and PHPUnit deprecations (`phpunit.xml.dist`).
+
 ### Unit Tests
 
-- Mock Doctrine, Router, PropertyAccessor
+- Stub Doctrine, Router, PropertyAccessor (`createStub()`); use `createMock()` only when asserting calls (`expects()`) — PHPUnit 13 raises notices for mocks without expectations, and `any()` is deprecated
 - Test each component in isolation
 - Cover edge cases (null values, empty arrays, etc.)
 
@@ -337,7 +339,7 @@ composer qa  # Runs phpstan, cs-check, tests
 
 ## PHPStan Configuration
 
-Level 9 strict mode - all files must:
+Level `max` strict mode - all files must:
 - Have strict types declaration
 - Have complete type coverage
 - Have no mixed types
@@ -354,8 +356,9 @@ Level 9 strict mode - all files must:
 
 ### Development
 
-- `phpunit/phpunit`: ^12.0
-- `phpstan/*`: ^2.0
+- `phpunit/phpunit`: ^12.0|^13.0
+- `phpstan/phpstan`: ^2.3
+- `phpstan/*` extensions: ^2.0
 - `friendsofphp/php-cs-fixer`: ^3.40
 
 ## Compatibility Matrix
@@ -364,7 +367,7 @@ Level 9 strict mode - all files must:
 |-----|---------|----------|--------|
 | 8.3 | 6.4     | 3.0      | ✅ Tested |
 | 8.3 | 7.0     | 3.0      | ✅ Tested |
-| 8.3 | 8.0     | 4.0      | ✅ Tested |
+| 8.4+ | 8.1    | 4.0      | ✅ Tested |
 | 8.2 | 6.4     | 3.0      | ❌ Not supported |
 
 ## AI Agent Instructions
@@ -379,6 +382,7 @@ When modifying this codebase:
 6. **Run QA**: Always run `composer qa` before suggesting changes
 7. **Update docs**: Update README.md and CHANGELOG.md for user-facing changes
 8. **Respect constraints**: PHP 8.3+, Symfony 6.4+, Doctrine 3.0+
+9. **No AI attribution**: Never add `Co-Authored-By` (or any AI/Claude attribution) to commit messages, and never add "Generated with" lines to PR descriptions. Commits are authored by the user alone.
 
 ### Code Generation Templates
 
@@ -439,7 +443,7 @@ class NewException extends SitemapException
 - [Sitemap Protocol](https://www.sitemaps.org/protocol.html)
 - [Symfony Bundles Best Practices](https://symfony.com/doc/current/bundles/best_practices.html)
 - [Doctrine Query Optimization](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/batch-processing.html)
-- [PHPStan Level 9](https://phpstan.org/user-guide/rule-levels)
+- [PHPStan Rule Levels](https://phpstan.org/user-guide/rule-levels)
 
 ## Support
 
